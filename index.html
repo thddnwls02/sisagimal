@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Bank Quiz</title>
+    <style>
+	/* Add this in the <style> section */
+	@keyframes confettiBurst {
+	    0% {
+	        transform: scale(1) translate(0, 0);
+	        opacity: 1;
+	    }
+	    100% {
+	        transform: translate(var(--x), var(--y)) rotate(360deg);
+	        opacity: 0;
+	    }
+	}
+
+        /* Overall body styling for a clean, exam-paper look */
+        body {
+            background: url('https://www.toptal.com/designers/subtlepatterns/patterns/old_mathematics.png');
+            font-family: 'Arial', sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            background-size: cover;
+        }
+        
+        /* Styling for headers */
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        /* Word bank container styling */
+        .word-bank {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        /* Word bank items */
+        .word-bank li {
+            list-style: none;
+            padding: 10px;
+            border: 2px solid #333;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s, text-decoration 0.3s;
+        }
+
+        /* Strike-through effect when word is clicked */
+        .word-bank li.strike {
+            text-decoration: line-through;
+            background-color: #e0e0e0;
+        }
+
+        /* Questions styling */
+        #questions {
+            margin-bottom: 20px;
+        }
+
+        #questions p {
+            margin: 10px 0;
+        }
+
+        /* Buttons styling */
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* Correct and incorrect input feedback */
+        .correct { background-color: lightgreen; }
+        .incorrect { background-color: lightcoral; }
+
+        /* Result text */
+        #result {
+            text-align: center;
+            font-size: 18px;
+            color: #333;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Word Bank</h2>
+    <ul id="wordBank" class="word-bank"></ul>
+
+    <h2>Fill in the blanks:</h2>
+    <form id="quizForm">
+        <div id="questions"></div>
+        <div style="text-align: center;">
+            <button type="button" onclick="checkAnswers()">Check Answers</button>
+            <button type="button" onclick="showAnswers()">Show Answers</button>
+            <button type="button" onclick="startQuiz()">Restart</button>
+        </div>
+    </form>
+
+    <h2 id="result"></h2>
+
+    <script>
+        class Word {
+            constructor(word, examplesentence, answer) {
+                this.word = word;
+                this.examplesentence = examplesentence;
+                this.answer = answer;
+            }
+        }
+
+        // Words and their respective sentences and variations
+        const words = [
+            new Word("align with", [
+                "As we prepare to implement changes in our organizational strategy, it is crucial that our new policy ______ the company's long-term vision and goals to ensure sustainable growth.",
+                "After receiving feedback from educators and stakeholders, the curriculum was carefully updated to ______ the latest educational standards, making it more relevant for students' needs."
+            ], ["aligns with", "align with"]),
+            new Word("appall", [
+                "The cruelty of the dictator's regime continues to ______ the international community, prompting widespread condemnation.",
+                "The news of the accident will ______ many people because of how serious it was."
+            ], ["appall", "appall"]),
+            new Word("appease", [
+                "When the baby started crying loudly in the middle of the store, the mother quickly handed him his favorite toy to ______ him and keep him calm.",
+                "After several complaints from their neighbors about the loud music during parties, the couple decided to lower the volume and even apologized to ______ them and maintain good relations."
+            ], ["appease", "appease"]),
+            new Word("authorize", [
+                "Before the teachers could move forward with the field trip arrangements, the school principal had to ______ the plan to ensure it met safety requirements and educational goals.",
+                "After extensive discussions and reviewing the community’s needs, the government officially decided to ______ the construction of a modern hospital to provide better healthcare services for the growing population."
+            ], ["authorize", "authorize"]),
+            new Word("be baked into", [
+                "The idea of sustainability is ______ the company's core values, influencing every decision from product design to supply chain management.",
+                "Innovation is ______ the company culture, driving employees to consistently think of creative solutions to complex problems."
+            ], ["is baked into", "is baked into"]),
+            new Word("blasphemy", [
+                "Accusing someone of ______, simply because they questioned traditional doctrines, can stifle meaningful theological debate.",
+                "In a society deeply rooted in tradition, questioning long-held customs is often seen as a form of ______."
+            ], ["blasphemy", "blasphemy"]),
+            new Word("catalyze", [
+                "The innovative drug was designed to ______ the body’s natural immune response to fight the infection.",
+                "A well-timed question can sometimes ______ deeper insights than hours of discussion."
+            ], ["catalyze", "catalyze"]),
+            new Word("civilized", [
+                "The debate was surprisingly ______, with both sides listening and responding thoughtfully.",
+                "He believed that the ability to forgive is what separates a ______ person from a barbaric one."
+            ], ["civilized", "civilized"]),
+            new Word("coercion", [
+                "The regime maintained its power through ______, silencing dissent with threats and violence.",
+                "Laws are necessary to protect individuals from ______ in financial or legal transactions."
+            ], ["coercion", "coercion"]),
+            new Word("cognizant of", [
+                "It is essential to be ______ cultural differences when conducting business internationally.",
+                "The team was ______ the tight deadline and worked efficiently to meet it."
+            ], ["cognizant of", "cognizant of"]),
+            new Word("collate", [
+                "It’s essential to ______ the survey responses carefully to identify meaningful trends.",
+                "Students were instructed to ______ their research notes into a single cohesive outline."
+            ], ["collate", "collate"]),
+            new Word("collision", [
+                "The ______ of opposing ideas during the debate sparked a lively discussion.",
+                "The ship’s captain managed to avoid a ______ with the iceberg at the last moment."
+            ], ["collision", "collision"]),
+            new Word("concede", [
+                "After hours of debate, she had to ______ that her opponent's argument was stronger.",
+                "The politician was hesitant to ______ that his policies had led to unintended consequences."
+            ], ["concede", "concede"]),
+            new Word("condemn", [
+                "The international community was quick to ______ the attack on innocent civilians.",
+                "The teacher ______ plagiarism as unethical and unacceptable in academic work."
+            ], ["condemn", "condemned"]),
+            new Word("contentious", [
+                "The new policy on environmental regulations became a ______ issue, sparking heated debates among politicians and activists.",
+                "The meeting turned ______ as team members disagreed on how to allocate the budget, with each department arguing for their own priorities."
+            ], ["contentious", "contentious"]),
+            new Word("conviction", [
+                "The jury’s ______ of the defendant was a direct result of the overwhelming evidence that proved his guilt beyond a reasonable doubt.",
+                "Her ______ that education can change lives motivated her to become a teacher."
+            ], ["conviction", "conviction"]),
+            new Word("corrigible", [
+                "The teacher believed that the student’s mistakes were ______ with proper guidance and patience.",
+                "While the initial design had flaws, the team viewed them as ______ and worked diligently to make the necessary adjustments."
+            ], ["corrigible", "corrigible"]),
+            new Word("corrosive", [
+                "Over time, the ______ effects of saltwater caused the metal parts of the bridge to deteriorate.",
+                "Fear and suspicion can have a ______ effect on relationships, gradually breaking down communication and trust."
+            ], ["corrosive", "corrosive"]),
+            new Word("curtail", [
+                "The company decided to ______ spending on non-essential projects to save money during the economic downturn.",
+                "Due to time constraints, the teacher had to ______ the class discussion and move on to the next topic."
+            ], ["curtail", "curtail"]),
+            new Word("demise", [
+                "The ______ of print newspapers has been attributed to the rapid rise of digital media.",
+                "Overhunting and habitat loss caused the eventual ______ of several endangered species."
+            ], ["demise", "demise"]),
+            new Word("dissolve", [
+                "The sugar will ______ quickly in hot water, creating a sweet solution.",
+                "Over time, the group’s unity began to ______ as conflicting interests took center stage."
+            ], ["dissolve", "dissolve"]),
+            new Word("eclipse", [
+                "The singer’s incredible performance managed to ______ all others in the competition.",
+                "The invention of the smartphone has largely ______ traditional forms of communication like letters."
+            ], ["eclipse", "eclipsed"]),
+            new Word("eliminate", [
+                "The government launched an initiative to ______ corruption from public institutions.",
+                "Regular exercise and a healthy diet can help ______ toxins from the body."
+            ], ["eliminate", "eliminate"]),
+            new Word("embody", [
+                "Her leadership style ______ the principles of empathy, transparency, and accountability.",
+                "His performance on stage truly ______ the spirit of the legendary musician he portrayed."
+            ], ["embodies", "embodied"]),
+            new Word("endeavor", [
+                "The team’s collaborative ______ resulted in a groundbreaking discovery in renewable energy.",
+                "She ______ to complete the marathon despite the extreme heat and exhaustion."
+            ], ["endeavor", "endeavored"]),
+            new Word("enthuse", [
+                "She always manages to ______ her students with her passion for literature, leaving them captivated by her vivid stories and inspired to delve deeper into the texts themselves.",
+                "It’s difficult to ______ someone who has already decided they’re not interested in the project."
+            ], ["enthuse", "enthuse"]),
+            new Word("envision", [
+                "He could vividly ______ the success of his startup, despite the challenges he currently faced.",
+                "The coach ______ his team winning the championship, motivating them to work harder toward their goal."
+            ], ["envision", "envisioned"]),
+            new Word("expound", [
+                "In his speech, he ______ the core principles of his new economic policy in great detail.",
+                "The teacher ______ on the historical context of the novel to help the students better understand its themes."
+            ], ["expounded", "expounded"]),
+            new Word("foster", [
+                "Reading regularly can ______ critical thinking skills and a broader understanding of the world.",
+                "International exchange programs help ______ mutual respect and understanding between cultures."
+            ], ["foster", "foster"]),
+            new Word("grievance", [
+                "She expressed her ______ about the lack of transparency in the company’s decision-making process.",
+                "A key ______ among the employees was the reduction in benefits without prior consultation."
+            ], ["grievance", "grievance"]),
+            new Word("heretic", [
+                "Despite being called a ______, she stood firm in her convictions, advocating for social reform.",
+                "The scientist’s refusal to conform to the dominant paradigm earned him the reputation of a ______ among his colleagues."
+            ], ["heretic", "heretic"]),
+            new Word("immoral", [
+                "Many consider lying to be an ______ act, especially when it harms others.",
+                "In some societies, gambling is viewed as ______ and is strictly prohibited."
+            ], ["immoral", "immoral"]),
+            new Word("immutable", [
+                "Despite the rapid changes in technology, certain core values remain ______ in their importance to society.",
+                "The constitution was designed to be flexible, yet some principles within it are regarded as ______."
+            ], ["immutable", "immutable"]),
+            new Word("impiety", [
+                "The elders warned the youth that ______ would bring misfortune, as it signaled disrespect for the divine.",
+                "The writer’s satirical works were criticized for their ______, as they mocked religious leaders and doctrines."
+            ], ["impiety", "impiety"]),
+            new Word("inherent", [
+                "The desire for freedom is an ______ part of human nature, transcending cultures and time periods.",
+                "The scientist argued that curiosity is ______ to the process of discovery and innovation."
+            ], ["inherent", "inherent"]),
+            new Word("intolerance", [
+                "______ of differing opinions often stifles meaningful dialogue and progress in a society.",
+                "The rise of ______ toward religious minorities has created tensions in the region."
+            ], ["intolerance", "intolerance"]),
+            new Word("judicial", [
+                "The ______ system plays a crucial role in maintaining law and order within a society.",
+                "She pursued a career in the ______ field, hoping to become a judge and advocate for justice."
+            ], ["judicial", "judicial"]),
+            new Word("lenient", [
+                "Critics argued that the judge’s ______ sentence did not adequately reflect the severity of the crime.",
+                "Some believe the government’s ______ stance on certain laws has encouraged further violations."
+            ], ["lenient", "lenient"]),
+            new Word("linger", [
+                "The scent of fresh flowers ______ in the room long after the guests had left.",
+                "The memory of their last conversation ______ in her mind, making it hard to move on."
+            ], ["lingered", "lingered"]),
+            new Word("lofty", [
+                "Her ______ ideals often clashed with the practical concerns of running a business.",
+                "Despite their ______ ambitions, the project failed due to a lack of proper planning and resources."
+            ], ["lofty", "lofty"]),
+            new Word("martyr", [
+                "Throughout history, ______ have inspired movements by standing firm in their beliefs, even in the face of death.",
+                "The memorial was built to honor the ______ who fought and died for their nation’s independence."
+            ], ["martyrs", "martyrs"]),
+            new Word("masquerade", [
+                "Her friendly demeanor turned out to be a ______, hiding her true intentions all along.",
+                "He tried to ______ his fear as confidence, but his trembling hands gave him away."
+            ], ["masquerade", "masquerade"]),
+            new Word("minefield", [
+                "Navigating the complex legal system can feel like walking through a ______, where one wrong step could lead to disaster.",
+                "For beginners, investing in the stock market can seem like a financial ______, full of risks and uncertainties."
+            ], ["minefield", "minefield"]),
+            new Word("miscellaneous", [
+                "The drawer was filled with ______ items, ranging from old keys to broken pens and receipts.",
+                "The app allows users to organize ______ files into folders for easier access and management."
+            ], ["miscellaneous", "miscellaneous"]),
+            new Word("mitigate", [
+                "To ______ traffic congestion, the city introduced additional bus routes and bike lanes.",
+                "The doctor recommended lifestyle changes to ______ the risk of heart disease and improve overall health."
+            ], ["mitigate", "mitigate"]),
+            new Word("noxious", [
+                "The factory was fined for releasing ______ fumes into the atmosphere, endangering nearby residents.",
+                "Consuming ______ substances, even in small amounts, can have devastating effects on the body."
+            ], ["noxious", "noxious"]),
+            new Word("ostracization", [
+                "His ______ from the group began after he openly criticized their unethical practices.",
+                "The whistleblower faced severe ______ from colleagues who viewed her actions as a betrayal."
+            ], ["ostracization", "ostracization"]),
+            new Word("persecute", [
+                "Throughout history, many groups have been ______ for their religious beliefs, often facing violence and discrimination.",
+                "Using social media to ______ others through bullying or harassment has become a serious issue in modern society."
+            ], ["persecuted", "persecute"]),
+            new Word("pervasive", [
+                "The influence of social media has become so ______ that it shapes the way people communicate and perceive the world.",
+                "The ______ presence of technology in classrooms has transformed the way students learn and teachers teach."
+            ], ["pervasive", "pervasive"]),
+            new Word("preponderance", [
+                "A ______ of the population favored the new policy, leading to its swift implementation.",
+                "The ______ of negative reviews discouraged potential customers from trying the product."
+            ], ["preponderance", "preponderance"]),
+            new Word("proclivity", [
+                "His ______ for skipping deadlines frustrated his coworkers, who had to pick up the slack.",
+                "His ______ for risk-taking led him into some questionable business ventures that didn’t always pay off."
+            ], ["proclivity", "proclivity"]),
+            new Word("profound", [
+                "The scientist made a ______ discovery that reshaped our understanding of the universe.",
+                "She felt a ______ sense of loss after the passing of her mentor."
+            ], ["profound", "profound"]),
+            new Word("promulgate", [
+                "Religious leaders often use their platforms to ______ messages of peace and compassion.",
+                "The treaty was officially ______ by the heads of state during the international summit."
+            ], ["promulgate", "promulgated"]),
+            new Word("provocative", [
+                "Her ______ comments about traditional education methods stirred up a lot of debate among the teachers at the conference.",
+                "The advertisement was designed to be ______, using bold imagery and language to grab attention and make people think."
+            ], ["provocative", "provocative"]),
+            new Word("purport", [
+                "He ______ to be an expert in ancient history, but his knowledge is often questioned by academics.",
+                "The article ______ to reveal hidden truths about the celebrity’s private life, but lacks credible sources."
+            ], ["purports", "purports"]),
+            new Word("rectify", [
+                "The engineer worked tirelessly to ______ the flaws in the design before production began.",
+                "She realized her assumptions were wrong and took steps to ______ her perspective on the matter."
+            ], ["rectify", "rectify"]),
+            new Word("resentment", [
+                "The team's ______ toward their coach’s favoritism became a source of tension during the season.",
+                "He felt a sense of ______ toward his parents for not supporting his career choices."
+            ], ["resentment", "resentment"]),
+            new Word("resilience", [
+                "The city demonstrated remarkable ______ after the natural disaster, rebuilding homes and infrastructure within months.",
+                "Mental ______ is key to coping with stress and overcoming life’s challenges."
+            ], ["resilience", "resilience"]),
+            new Word("revere", [
+                "In many cultures, elders are ______ as the keepers of wisdom and tradition.",
+                "The community continues to ______ the historic temple as a sacred place of worship and reflection."
+            ], ["revered", "revere"]),
+            new Word("rooted", [
+                "Her beliefs are deeply ______ in the traditions of her culture, shaping how she views the world.",
+                "The story is ______ in historical events but takes creative liberties to enhance the narrative."
+            ], ["rooted", "rooted"]),
+            new Word("skepticism", [
+                "Philosophical ______ challenges the idea that humans can ever truly know anything with absolute certainty.",
+                "The team faced ______ from investors who doubted their ability to compete in a crowded market."
+            ], ["skepticism", "skepticism"]),
+            new Word("stifle", [
+                "Fear of criticism can ______ people’s willingness to share innovative ideas.",
+                "She managed to ______ a scream as the startling figure appeared out of nowhere."
+            ], ["stifle", "stifle"]),
+            new Word("superficial", [
+                "The damage to the car was only ______, with a few scratches on the surface but no major issues.",
+                "The conversation felt ______, as they avoided discussing deeper or more meaningful topics."
+            ], ["superficial", "superficial"]),
+            new Word("tailor", [
+                "The company ______ its marketing strategy to appeal specifically to younger audiences.",
+                "The teacher ______ the lesson plan to suit the varying skill levels of her students."
+            ], ["tailored", "tailored"]),
+            new Word("tangible", [
+                "The charity’s efforts provided ______ results, such as clean water systems and newly built schools.",
+                "He prefers working on projects that deliver ______ outcomes rather than abstract ideas."
+            ], ["tangible", "tangible"]),
+            new Word("transformative", [
+                "Advances in artificial intelligence are having a ______ impact on industries worldwide.",
+                "Travel can be a ______ experience, broadening one’s perspective on culture and humanity."
+            ], ["transformative", "transformative"]),
+            new Word("unblemished", [
+                "The diamond was valued highly for its ______ surface, free of any imperfections.",
+                "His record as a public servant remained ______, with no accusations of misconduct or corruption."
+            ], ["unblemished", "unblemished"]),
+            new Word("undermine", [
+                "The report revealed flaws that could ______ the foundation of their scientific research.",
+                "She was careful not to ______ her colleague’s authority during the meeting, despite their disagreement."
+            ], ["undermine", "undermine"]),
+            new Word("unravel", [
+                "The detective slowly ______ the complex web of lies surrounding the case to find the truth.",
+                "His plan to deceive his coworkers started to ______ when inconsistencies in his story were discovered."
+            ], ["unraveled", "unravel"]),
+            new Word("upbringing", [
+                "His ______ in a musical family greatly influenced his passion for playing the piano.",
+                "The documentary explores how a child’s ______ shapes their personality and future choices."
+            ], ["upbringing", "upbringing"]),
+            new Word("uphold", [
+                "As a leader, it is his duty to ______ the principles of fairness and justice in every decision he makes.",
+                "Journalists have a responsibility to ______ the truth and maintain integrity in their reporting."
+            ], ["uphold", "uphold"]),
+            new Word("virtuous", [
+                "She is admired for her ______ character, always putting others’ needs before her own.",
+                "He was raised to be a ______ individual, taught to respect others and contribute positively to society."
+            ], ["virtuous", "virtuous"]),
+            new Word("zealous", [
+                "The missionary was known for his ______ efforts to spread his faith to remote areas of the world.",
+                "The politician’s ______ supporters rallied passionately at every event, eager to promote his agenda."
+            ], ["zealous", "zealous"])
+        ];
+
+        // Shuffle array function
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        let selectedWords = [];
+        let selectedSentences = [];
+
+        // Function to start the quiz
+        function startQuiz() {
+            // Clear previous content
+            document.getElementById('wordBank').innerHTML = '';
+            document.getElementById('questions').innerHTML = '';
+            document.getElementById('result').innerText = '';
+
+            // Randomly select 8 words
+            selectedWords = shuffle([...words]).slice(0, 8);
+
+            // Extract one random sentence and answer for each selected word
+            selectedSentences = selectedWords.map(wordObj => {
+                const randomIndex = Math.floor(Math.random() * wordObj.examplesentence.length);
+                return { sentence: wordObj.examplesentence[randomIndex], answer: wordObj.answer[randomIndex] };
+            });
+
+            // Shuffle the selected sentences
+            shuffle(selectedSentences);
+
+            // Display the word bank
+            let wordBankHTML = selectedWords.map(wordObj => `<li onclick="toggleStrike(this)">${wordObj.word}</li>`).join('');
+            document.getElementById('wordBank').innerHTML = wordBankHTML;
+
+            // Display the sentences with input fields
+            let questionsHTML = selectedSentences.map((item, index) => {
+                return `<p>${index + 1}. ${item.sentence.replace('______', `<input type="text" id="q${index + 1}">`)}</p>`;
+            }).join('');
+            document.getElementById('questions').innerHTML = questionsHTML;
+        }
+
+        // Toggle strike-through on word bank items
+        function toggleStrike(element) {
+            element.classList.toggle('strike');
+        }
+
+	// Toggle show hint
+	function showHint(index) {
+    	    const hintLetter = selectedSentences[index].answer.charAt(0);
+    	    const inputField = document.getElementById('q' + (index + 1));
+    	    inputField.value = hintLetter;
+	}
+
+
+        // Check the user's answers
+        function checkAnswers() {
+            let score = 0;
+            let totalQuestions = selectedSentences.length;
+
+            for (let i = 0; i < totalQuestions; i++) {
+                let userAnswer = document.getElementById('q' + (i + 1)).value.trim().toLowerCase();
+                if (userAnswer === selectedSentences[i].answer.toLowerCase()) {
+                    score++;
+                    document.getElementById('q' + (i + 1)).classList.add('correct');
+                    document.getElementById('q' + (i + 1)).classList.remove('incorrect');
+                } else {
+                    document.getElementById('q' + (i + 1)).classList.add('incorrect');
+                    document.getElementById('q' + (i + 1)).classList.remove('correct');
+                }
+            }
+
+            let resultText = `You got ${score} out of ${totalQuestions} correct.`;
+            document.getElementById('result').innerText = resultText;
+
+            // Special effect for a perfect score
+            if (score === totalQuestions) {
+                document.getElementById('result').innerHTML = "Congratulations! 🎉 You got all the answers correct!";
+                triggerConfetti();
+            }
+        }
+
+        // Show the correct answers
+        function showAnswers() {
+            let totalQuestions = selectedSentences.length;
+
+            for (let i = 0; i < totalQuestions; i++) {
+                document.getElementById('q' + (i + 1)).value = selectedSentences[i].answer;
+                document.getElementById('q' + (i + 1)).classList.remove('incorrect', 'correct');
+            }
+        }
+
+        // Confetti effect for a perfect score
+        function triggerConfetti() {
+	    const confettiContainer = document.createElement('div');
+	    confettiContainer.id = 'confetti-container';
+	    document.body.appendChild(confettiContainer);
+
+	    for (let i = 0; i < 300; i++) {
+	        const confetti = document.createElement('div');
+	        confetti.className = 'confetti';
+	        
+	        // Randomized direction for the confetti particles
+	        confetti.style.setProperty('--x', `${Math.random() * 200 - 100}vw`);
+	        confetti.style.setProperty('--y', `${Math.random() * 200 - 100}vh`);
+
+	        confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+	        confetti.style.position = 'absolute';
+	        confetti.style.width = '10px';
+	        confetti.style.height = '10px';
+        	confetti.style.borderRadius = '50%';1
+        	confetti.style.top = '50%';
+        	confetti.style.left = '50%';
+        	confetti.style.animation = 'confettiBurst 1s ease-out forwards';
+        	confettiContainer.appendChild(confetti);
+    	    }
+
+    	    // Remove confetti after 1 second (duration of the animation)
+    	    setTimeout(() => {
+        	confettiContainer.remove();
+    	    }, 1000);
+	}
+
+
+        // Initialize the quiz on page load
+        window.onload = startQuiz;
+    </script>
+</body>
+</html>
